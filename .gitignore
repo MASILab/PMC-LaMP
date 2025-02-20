@@ -1,3 +1,4 @@
 .venv
-pmc_result.txt
-pmc_articles/
+.env
+pmcids/
+full-text_articles/
