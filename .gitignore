@@ -1,4 +1,7 @@
 .venv
 .env
+__pycache__/
 pmcids/
+indexes/
 full-text_articles/
+conversation_logs/
