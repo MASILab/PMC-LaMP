@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import time
 import requests
 import subprocess
 import streamlit as st
@@ -12,12 +13,36 @@ load_dotenv()
 SERVER_IP = os.getenv("SERVER_IP")
 
 
+# def start_uvicorn():
+#     try:
+#         subprocess.run([f"{sys.executable}", "app.py"])
+
+#         with st.spinner("Loading..."):
+#             result = subprocess.run([f"{sys.executable}", "app.py"], check=True)
+#         if result.returncode == 0:
+#             st.success("Uvicorn server started successfully!")
+#             st.write(
+#                 "The Uvicorn server is now running. If things aren't working, check the terminal where PMC-LaMP.py was started"
+#             )
+#     except subprocess.CalledProcessError as e:
+#         st.error(f"Error starting Uvicorn server: {str(e)}")
+#     except Exception as e:
+#         st.error(f"Error starting Uvicorn server: {str(e)}")
+
 def start_uvicorn():
     try:
-        subprocess.run([f"{sys.executable}", "app.py"])
+        # Start the subprocess in a separate thread
+        subprocess.Popen([f"{sys.executable}", "app.py"])
 
-        with st.spinner("Loading..."):
-            result = subprocess.run([f"{sys.executable}", "app.py"], check=True)
+        # Show the loading bar
+        with st.empty():
+            with st.progress(0):
+                for i in range(100):
+                    time.sleep(1)  # Simulate a short loading process
+                    st.progress(i + 1)
+
+        # Wait for the subprocess to finish
+        result = subprocess.run([f"{sys.executable}", "app.py"], check=True)
         if result.returncode == 0:
             st.success("Uvicorn server started successfully!")
             st.write(
