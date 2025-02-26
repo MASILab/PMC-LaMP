@@ -3,5 +3,5 @@
 __pycache__/
 pmcids/
 indexes/
-full-text_articles/
+fulltext_articles/
 conversation_logs/

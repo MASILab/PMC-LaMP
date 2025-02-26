@@ -1,5 +1,7 @@
 # PMC-LaMP
 
+## Pipeline Overview
+
 1) Download a list of PMCIDs based off keyword search on PMC
     - You can download a list of PMCIDs based on keyword search on the website directly.
     - Can be optimized, not yet a priority
@@ -9,3 +11,17 @@
 3) Generate a FAISS Index from downloaded articles
     - Loss is ~1% of the jsons (currently investigating why)
 4) Create a custom RAG enabled chatbot with scientifically backed responses.
+
+## Installation
+
+```bash
+pip install -r requirements.txt
+```
+
+## Usage
+
+Start the web app with the following command:
+
+```bash
+streamlit run PMC-LaMP.py
+```
