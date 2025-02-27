@@ -29,6 +29,7 @@ SERVER_IP = os.getenv("SERVER_IP")
 #     except Exception as e:
 #         st.error(f"Error starting Uvicorn server: {str(e)}")
 
+
 def start_uvicorn():
     try:
         # Start the subprocess in a separate thread

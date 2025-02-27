@@ -1,6 +1,7 @@
 import streamlit as st
 import subprocess
 
+
 def main():
     st.title("BioC JSON Article Downloader")
 
@@ -10,13 +11,20 @@ def main():
 
         if st.button("Begin Downloading"):
             try:
-                result = subprocess.run(["bash", "fetch_pmc_articles.sh", input_file_path], capture_output=True, text=True)
+                result = subprocess.run(
+                    ["bash", "fetch_pmc_articles.sh", input_file_path],
+                    capture_output=True,
+                    text=True,
+                )
                 if result.returncode == 0:
                     st.write(result.stdout)
                 else:
-                    st.error(f"An error occurred while processing the file: {result.stderr}")
+                    st.error(
+                        f"An error occurred while processing the file: {result.stderr}"
+                    )
             except Exception as e:
                 st.error(f"An error occurred: {e}")
+
 
 if __name__ == "__main__":
     main()
