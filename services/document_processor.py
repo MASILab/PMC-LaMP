@@ -21,17 +21,10 @@ MARKDOWN_SEPARATORS = [
     "\n\n",
     "\n",
     " ",
-    ""
+    "",
 ]
 
-JSON_SEPARATORS = [
-    "/n/n",
-    "/n",
-    ". ",
-    ", ",
-    " ",
-    ""
-]
+JSON_SEPARATORS = ["/n/n", "/n", ". ", ", ", " ", ""]
 
 
 def extract_text_from_pdf(pdf_file: Path) -> str:
@@ -52,16 +45,16 @@ def extract_text_from_pdf(pdf_file: Path) -> str:
 
 def extract_text_from_json(json_file: Path) -> str:
     try:
-        with open(json_file, 'r') as f:
+        with open(json_file, "r") as f:
             bioc_data = json.load(f)
-            
+
         all_text = []
         if isinstance(bioc_data, list):
             bioc_data = bioc_data[0]
-        
-        for document in bioc_data.get('documents', []):
-            for passage in document.get('passages', []):
-                all_text.append(passage.get('text', ''))
+
+        for document in bioc_data.get("documents", []):
+            for passage in document.get("passages", []):
+                all_text.append(passage.get("text", ""))
         return "\n".join(all_text)
     except json.JSONDecodeError:
         logging.warning(f"Skipping invalid JSON file: {json_file.name}")
@@ -75,12 +68,11 @@ def process_docs_in_groups(
     input_files, group_size, chunk_size, chunk_overlap, input_type, embedding_model_name
 ):
     """Process and incrementally save documents to vector database"""
-    
+
     if input_type == "json":
         separator_type = JSON_SEPARATORS
     else:
         separator_type = MARKDOWN_SEPARATORS
-
 
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,

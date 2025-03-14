@@ -54,7 +54,7 @@ def answer_with_rag(
 
     context = "\nExtracted documents:\n"
     for i, (content, _, _) in enumerate(relevant_docs):
-        context += f"Document {i+1}:::\n{content}\n"
+        context += f"Document {i + 1}:::\n{content}\n"
 
     final_prompt = prompt_template.format(question=question, context=context)
     log.info("Generating answer...")
