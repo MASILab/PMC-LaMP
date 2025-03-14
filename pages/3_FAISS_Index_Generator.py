@@ -3,6 +3,11 @@ import streamlit as st
 
 
 def main():
+    """
+    Provides a file uploader for selecting an input folder.
+
+    If the "Generate FAISS index" button is clicked, the index_generator.py script is run with the selected folder as an argument.
+    """
     st.title("FAISS Index Generator")
 
     uploaded_folder = st.file_uploader(

@@ -3,6 +3,11 @@ import subprocess
 
 
 def main():
+    """
+    Provides a file uploader for selecting a .txt input file of PMCIDs.
+
+    If the "Begin Downloading" button is clicked, the fetch_pmc_articles.sh script is run with the selected file as an argument.
+    """
     st.title("BioC JSON Article Downloader")
 
     uploaded_file = st.file_uploader("Choose an input file", type="txt")

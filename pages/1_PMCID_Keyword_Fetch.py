@@ -2,6 +2,9 @@ import streamlit as st
 
 
 def main():
+    """
+    Provides instructions for downloading a list of PMCIDs from PubMed Central.
+    """
     st.title("PMCID Extraction")
 
     st.write("1. Go to https://pmc.ncbi.nlm.nih.gov/ and search for your topic")
