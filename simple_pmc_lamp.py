@@ -122,37 +122,73 @@ def download_articles(pmcid_file):
     if not os.access(script_path, os.X_OK):
         os.chmod(script_path, os.stat(script_path).st_mode | 0o111)
     
+    # Count total PMCIDs to download
+    try:
+        with open(pmcid_file, 'r') as f:
+            total_pmcids = len(f.readlines())
+        print(f"Found {total_pmcids} PMCIDs to download")
+    except Exception as e:
+        print(f"Could not count PMCIDs: {e}")
+        total_pmcids = 0
+    
     print(f"Starting download using PMCIDs from: {pmcid_file}")
     print("This may take several minutes depending on the number of articles...")
     
+    # Extract the keyword from the PMCID filename
+    keyword = os.path.basename(pmcid_file).split("_")[0]
+    articles_dir = f"fulltext_articles/{keyword}_pmc_articles"
+    
+    # Setup progress counter
+    downloaded = 0
+    failed = 0
+    
+    # Use Popen to get real-time output
     try:
-        result = subprocess.run(
-            f"bash {script_path} {pmcid_file}", 
-            shell=True, 
-            check=True, 
-            text=True,
+        process = subprocess.Popen(
+            f"bash {script_path} {pmcid_file}",
+            shell=True,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1,
+            universal_newlines=True
         )
-        print(result.stdout)
-        if result.stderr:
-            print(f"Warnings/errors: {result.stderr}")
         
-        # Extract the keyword from the PMCID filename
-        keyword = os.path.basename(pmcid_file).split("_")[0]
-        articles_dir = f"fulltext_articles/{keyword}_pmc_articles"
+        # Process output in real-time
+        for line in process.stdout:
+            # Check if the line contains a download status update
+            if "Successfully fetched article" in line:
+                downloaded += 1
+                pmcid = line.split("article")[1].strip()
+                progress = (downloaded + failed) / total_pmcids * 100 if total_pmcids > 0 else 0
+                print(f"\r[{downloaded}/{total_pmcids}] Downloaded: {progress:.1f}% - Latest: {pmcid}", end="")
+            elif "Failed to fetch article" in line:
+                failed += 1
+                pmcid = line.split("article")[1].split(":")[0].strip()
+                print(f"\nFailed to download article: {pmcid}")
+            elif "Completed fetching" in line:
+                print(f"\n\n{line.strip()}")
+            
+        # Wait for process to complete
+        process.wait()
+        
+        if process.returncode != 0:
+            print(f"\n⚠️  Download process exited with code {process.returncode}")
+            for line in process.stderr:
+                print(f"Error: {line.strip()}")
+        else:
+            print(f"\n✓ Download completed: {downloaded} articles downloaded, {failed} failed")
         
         # Check if articles were downloaded
         if os.path.exists(articles_dir) and len(list(Path(articles_dir).glob("*.json"))) > 0:
-            print(f"✓ Articles downloaded to: {articles_dir}")
+            print(f"✓ Articles saved to: {articles_dir}")
             return articles_dir
         else:
             print("⚠️  No articles were downloaded.")
             return None
             
-    except subprocess.CalledProcessError as e:
-        print(f"⚠️  Error during download: {e}")
-        print(f"Error details: {e.stderr}")
+    except Exception as e:
+        print(f"\n⚠️  Error during download: {e}")
         return None
 
 def generate_index(articles_dir, max_files=250000, group_size=1000, chunk_size=1000, chunk_overlap=20):
@@ -164,15 +200,22 @@ def generate_index(articles_dir, max_files=250000, group_size=1000, chunk_size=1
         return False
     
     # Count how many articles we have
-    article_count = len(list(Path(articles_dir).glob("*.json")))
+    article_files = list(Path(articles_dir).glob("*.json"))
+    article_count = len(article_files)
     print(f"Found {article_count} articles to index.")
     
     # Adjust group size if very few articles
     if article_count < 100:
         group_size = min(group_size, article_count)
+        print(f"Adjusting group size to {group_size} for small article collection")
     
-    print("Starting index generation...")
-    print("This may take several minutes depending on the number of articles...")
+    # Calculate expected processing groups
+    expected_groups = (article_count + group_size - 1) // group_size
+    print(f"Will process articles in approximately {expected_groups} groups")
+    
+    print("\nStarting index generation...")
+    print("This may take several minutes depending on the number of articles.")
+    print("Progress will be displayed as groups are processed:")
     
     command = (
         f"python index_generator.py "
@@ -185,28 +228,74 @@ def generate_index(articles_dir, max_files=250000, group_size=1000, chunk_size=1
     )
     
     try:
-        result = subprocess.run(
+        process = subprocess.Popen(
             command, 
             shell=True, 
-            check=True, 
-            text=True,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1,
+            universal_newlines=True
         )
         
-        if "Knowledge vectorstore successfully saved" in result.stdout:
+        # Track processing progress
+        current_group = 0
+        current_file = 0
+        articles_processed = 0
+        
+        # Process output in real-time
+        for line in process.stdout:
+            # Look for progress indicators in the output
+            if "Processing group" in line and "of files" in line:
+                try:
+                    # Try to extract the group number
+                    current_group = int(line.split("Processing group")[1].split("of")[0].strip())
+                    group_total = expected_groups
+                    group_progress = current_group / group_total * 100 if group_total > 0 else 0
+                    print(f"\r[Group {current_group}/{group_total}] Overall progress: {group_progress:.1f}%", end="")
+                except:
+                    print(f"\r{line.strip()}", end="")
+                    
+            elif "Processing file" in line:
+                try:
+                    # Extract current file info if possible
+                    current_file += 1
+                    articles_processed += 1
+                    file_progress = articles_processed / article_count * 100 if article_count > 0 else 0
+                    
+                    # Only update occasionally to avoid too many updates
+                    if articles_processed % 10 == 0:
+                        print(f"\r[Group {current_group}] Files processed: {articles_processed}/{article_count} ({file_progress:.1f}%)", end="")
+                except:
+                    pass
+            
+            # Important milestone messages get their own lines
+            elif "Converting documents to" in line or "Creating embeddings" in line:
+                print(f"\n{line.strip()}")
+            elif "Knowledge vectorstore successfully saved" in line:
+                print(f"\n\n✅ {line.strip()}")
+            
+        # Wait for process to complete
+        process.wait()
+        
+        # Get any error output
+        error_output = process.stderr.read() if process.stderr else ""
+        
+        if process.returncode != 0:
+            print(f"\n\n⚠️  Index generation exited with code {process.returncode}")
+            print(f"Error details: {error_output}")
+            return None
+        
+        print(f"\n✓ Index generation complete! Processed {articles_processed} articles.")
+        if "Knowledge vectorstore successfully saved" in error_output + process.stdout.read():
             print("✓ FAISS index generated successfully.")
             return "indexes/faiss_index"
         else:
-            print(result.stdout)
-            if result.stderr:
-                print(f"Warnings/errors: {result.stderr}")
-            print("⚠️  Index generation may have had issues.")
+            print("⚠️  Index generation may have had issues, but appears to have completed.")
             return "indexes/faiss_index"  # Return default path anyway
             
-    except subprocess.CalledProcessError as e:
-        print(f"⚠️  Error generating index: {e}")
-        print(f"Error details: {e.stderr}")
+    except Exception as e:
+        print(f"\n⚠️  Error generating index: {e}")
         return None
 
 def update_config(index_path):

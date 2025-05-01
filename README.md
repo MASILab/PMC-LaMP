@@ -48,9 +48,9 @@ python simple_pmc_lamp.py
 This interactive script will:
 1. Check your environment and dependencies
 2. Ask for your medical topic keyword
-3. Guide you through obtaining PMCIDs (or use sample ones)
-4. Download the articles
-5. Generate the FAISS index
+3. Guide you through obtaining PMCIDs
+4. Download the articles with real-time progress display
+5. Generate the FAISS index with progress tracking
 6. Configure the application
 7. Start the chatbot servers
 
@@ -59,6 +59,14 @@ You can also provide a topic keyword directly:
 ```bash
 python simple_pmc_lamp.py --keyword cancer
 ```
+
+### User-Friendly Features:
+
+- **Real-time progress tracking** - See exactly how many articles are downloading and indexing
+- **Percentage completion** - Track overall progress during lengthy operations
+- **Interactive prompts** - Guided experience with clear instructions
+- **Error handling** - Helpful error messages if something goes wrong
+- **Smart defaults** - Automatic detection and use of existing files
 
 The script will walk you through each step and handle all the technical details automatically.
 
