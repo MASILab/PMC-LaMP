@@ -29,17 +29,17 @@ All commands in this README assume a Linux/Unix bash environment.
    cd PMC-LaMP
    ```
 
-2. Create a virtual environment and activate it:
+2. Create a virtual environment and activate it using `uv`:
 
    ```bash
-   python3 -m venv venv
-   source venv/bin/activate
+   uv venv
+   source .venv/bin/activate
    ```
 
 3. Install the required dependencies:
 
    ```bash
-   pip install -r requirements.txt
+   uv pip install -r requirements.txt
    ```
 
 4. Set up environment variables:

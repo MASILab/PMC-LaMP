@@ -1,4 +1,4 @@
-from ragatouille import RAGPretrainedModel
+from colbert import Trainer as RAGPretrainedModel
 
 FAISS_INDEX = "indexes/faiss_index"
 

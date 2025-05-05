@@ -5,7 +5,6 @@ import argparse
 import subprocess
 import time
 from pathlib import Path
-import webbrowser
 import importlib.util
 
 
@@ -202,7 +201,7 @@ def download_articles(pmcid_file):
 
 
 def generate_index(
-    articles_dir, max_files=250000, group_size=1000, chunk_size=1000, chunk_overlap=20
+    articles_dir, keyword, max_files=250000, group_size=1000, chunk_size=1000, chunk_overlap=20
 ):
     """Generate FAISS index from downloaded articles."""
     print_section("Generating FAISS Index")
@@ -229,14 +228,16 @@ def generate_index(
     print("This may take a while depending on the number of articles.")
     print("Progress will be displayed as groups are processed:")
 
+    index_name = f"faiss_index_{keyword.replace(' ', '_')}"
     command = (
-        f"python index_generator.py "
+        f"python3 index_generator.py "
         f"--document_path {articles_dir} "
         f"--input_type json "
         f"--max_files {max_files} "
         f"--group_size {group_size} "
         f"--chunk_size {chunk_size} "
-        f"--chunk_overlap {chunk_overlap}"
+        f"--chunk_overlap {chunk_overlap} "
+        f"--index_name {index_name}"
     )
 
     try:
@@ -320,12 +321,12 @@ def generate_index(
             in error_output + process.stdout.read()
         ):
             print("✓ FAISS index generated successfully.")
-            return "indexes/faiss_index"
+            return f"indexes/{index_name}"
         else:
             print(
                 "⚠️  Index generation may have had issues, but appears to have completed."
             )
-            return "indexes/faiss_index"  # Return default path anyway
+            return f"indexes/{index_name}"  # Return default path anyway
 
     except Exception as e:
         print(f"\n⚠️  Error generating index: {e}")
@@ -371,7 +372,7 @@ def start_servers():
     # Start API server in background
     print("Starting API server...")
     api_process = subprocess.Popen(
-        ["python", "app.py"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        [sys.executable, "app.py"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
     )
 
     # Wait a bit for the API to start
@@ -390,7 +391,7 @@ def start_servers():
     # Start Streamlit interface
     print("Starting Streamlit interface...")
     streamlit_process = subprocess.Popen(
-        ["streamlit", "run", "PMC-LaMP.py"],
+        [sys.executable, "-m", "streamlit", "run", "PMC-LaMP.py"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
@@ -413,10 +414,10 @@ def start_servers():
     print("✓ Streamlit interface started successfully.")
 
     # Try to open browser
+    time.sleep(3)  # Wait a bit for Streamlit to be ready
     try:
         # Attempt to detect Streamlit URL from output
         streamlit_url = "http://localhost:8501"
-        webbrowser.open(streamlit_url)
         print(f"Opening browser to {streamlit_url}")
     except Exception as e:
         print(f"Could not open browser automatically: {e}")
@@ -440,6 +441,28 @@ def start_servers():
     return True
 
 
+def prompt_for_existing_index():
+    """Prompt the user to select an existing index from the indexes directory."""
+    print_section("Select Existing Index")
+
+    index_dir = Path("indexes")
+    available_indexes = [d for d in index_dir.iterdir() if d.is_dir() and any(d.iterdir())]
+
+    if available_indexes:
+        print("The following indexes are available:")
+        for i, index in enumerate(available_indexes, start=1):
+            print(f"  {i}. {index.name}")
+
+        choice = input("Enter the number of the index you want to use, or press Enter to skip: ").strip()
+        if choice.isdigit() and 1 <= int(choice) <= len(available_indexes):
+            selected_index = available_indexes[int(choice) - 1]
+            print(f"✓ Using selected index: {selected_index}")
+            return str(selected_index)
+
+    print("No valid index selected or available.")
+    return None
+
+# Update the main function to include the prompt for existing index
 def main():
     parser = argparse.ArgumentParser(description="PMC-LaMP Simple Runner")
     parser.add_argument(
@@ -454,6 +477,15 @@ def main():
     # Initial setup check
     if not interactive_setup():
         print("Setup incomplete. Please resolve the issues and try again.")
+        return
+
+    # Prompt for existing index
+    index_path = prompt_for_existing_index()
+    if index_path:
+        # Skip the pipeline if an index is already available
+        if not update_config(index_path):
+            print("Warning: Config update failed. The application may not work correctly.")
+        start_servers()
         return
 
     # Get keyword from user if not provided as argument
@@ -479,7 +511,7 @@ def main():
         return
 
     # Step 3: Generate index
-    index_path = generate_index(articles_dir)
+    index_path = generate_index(articles_dir, keyword)
     if not index_path:
         print("Cannot proceed without index.")
         return

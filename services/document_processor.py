@@ -1,4 +1,3 @@
-import pymupdf
 import time
 import logging
 import json
@@ -25,22 +24,6 @@ MARKDOWN_SEPARATORS = [
 ]
 
 JSON_SEPARATORS = ["/n/n", "/n", ". ", ", ", " ", ""]
-
-
-def extract_text_from_pdf(pdf_file: Path) -> str:
-    """Extracts text from a PDF file"""
-    try:
-        with pymupdf.open(pdf_file) as doc:
-            text = ""
-            for page in doc:
-                text += page.get_text()
-        return text
-    except pymupdf.EmptyFileError:
-        logging.warning(f"Skipping empty file: {pdf_file.name}")
-        return ""
-    except Exception as e:
-        logging.error(f"Failed to process {pdf_file.name}: {e}")
-        return ""
 
 
 def extract_text_from_json(json_file: Path) -> str:
@@ -104,9 +87,7 @@ def process_docs_in_groups(
         for file in tqdm(
             group_files, desc=f"{input_type.upper()} files", position=0, leave=False
         ):
-            if input_type == "pdf":
-                text = extract_text_from_pdf(file)
-            elif input_type == "json":
+            if input_type == "json":
                 text = extract_text_from_json(file)
             else:
                 raise ValueError(f"Unsupported input type: {input_type}")
