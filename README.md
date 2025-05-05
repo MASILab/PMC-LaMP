@@ -83,17 +83,6 @@ python guided_pmc_lamp.py --keyword crohn's
 
 The script will walk you through each step and handle all the technical details automatically.
 
-## Starting the Application
-
-If you've already completed the setup (downloading articles and generating the index), you can start the application with:
-
-```bash
-chmod +x start_pmc_lamp.sh  # Make the script executable (first time only)
-./start_pmc_lamp.sh
-```
-
-This script will start the API server and Streamlit interface, opening the web application in your browser.
-
 ## Manual Pipeline Workflow
 
 For advanced users who prefer to run each step manually, follow the detailed pipeline below:
