@@ -198,7 +198,7 @@ def generate_index(articles_dir, max_files=250000, group_size=1000, chunk_size=1
     print(f"Will process articles in approximately {expected_groups} groups")
     
     print("\nStarting index generation...")
-    print("This may take several minutes depending on the number of articles.")
+    print("This may take a while depending on the number of articles.")
     print("Progress will be displayed as groups are processed:")
     
     command = (

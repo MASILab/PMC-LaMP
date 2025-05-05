@@ -1,6 +1,6 @@
 from ragatouille import RAGPretrainedModel
 
-FAISS_INDEX = "indexes/MASI_PDFs_index"
+FAISS_INDEX = "indexes/faiss_index"
 
 
 READER_MODEL = "HuggingFaceH4/zephyr-7b-beta"
