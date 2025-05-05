@@ -1,6 +1,6 @@
 # PMC-LaMP: PubMed Central Language Model Pipeline
 
-PMC-LaMP is a tool for creating custom RAG-enabled chatbots based on PubMed Central medical literature. This pipeline allows you to search for scientific articles on a specific topic, download them, create a vector index, and generate a chatbot that can answer questions based on the literature.
+PMC-LaMP is a tool for creating custom RAG-enabled chatbots based on PubMed Central medical literature. This pipeline allows you to search for scientific articles on a specific topic, download them, create a vector index, and generate a local chatbot that can answer questions based on the literature.
 
 ## Prerequisites
 
@@ -8,10 +8,12 @@ PMC-LaMP is a tool for creating custom RAG-enabled chatbots based on PubMed Cent
 - Linux/Unix bash environment
 - Internet connection
 - At least 8GB of RAM
-- Disk space proportional to the number of articles (approximately 1GB per 10,000 articles)
+- Available disk space proportional to the number of articles (approximately 1GB per 10,000 articles)
 
 ### Important Note for Windows Users
+
 This tool requires a bash environment to run. Windows users must use one of the following options:
+
 - Install Windows Subsystem for Linux (WSL) - recommended
 - Use a Linux virtual machine
 - Use Git Bash (may have limited functionality)
@@ -21,19 +23,29 @@ All commands in this README assume a Linux/Unix bash environment.
 ## Installation
 
 1. Clone this repository:
+
    ```bash
    git clone https://github.com/yourusername/PMC-LaMP.git
    cd PMC-LaMP
    ```
 
-2. Install the required dependencies:
+2. Create a virtual environment and activate it:
+
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+3. Install the required dependencies:
+
    ```bash
    pip install -r requirements.txt
    ```
 
-3. Set up environment variables (optional):
+4. Set up environment variables:
    Create a `.env` file in the root directory and add:
-   ```
+
+   ```bash
    SERVER_IP=127.0.0.1
    ```
 
@@ -42,10 +54,11 @@ All commands in this README assume a Linux/Unix bash environment.
 The easiest way to use PMC-LaMP is with our interactive script that guides you through the entire process:
 
 ```bash
-python simple_pmc_lamp.py
+python guided_pmc_lamp.py
 ```
 
 This interactive script will:
+
 1. Check your environment and dependencies
 2. Ask for your medical topic keyword
 3. Guide you through obtaining PMCIDs
@@ -57,10 +70,10 @@ This interactive script will:
 You can also provide a topic keyword directly:
 
 ```bash
-python simple_pmc_lamp.py --keyword cancer
+python guided_pmc_lamp.py --keyword crohn's
 ```
 
-### User-Friendly Features:
+### User-Friendly Features
 
 - **Real-time progress tracking** - See exactly how many articles are downloading and indexing
 - **Percentage completion** - Track overall progress during lengthy operations
@@ -87,7 +100,7 @@ For advanced users who prefer to run each step manually, follow the detailed pip
 
 ### Step 1: Collect PMCIDs for your topic
 
-1. Go to https://pmc.ncbi.nlm.nih.gov/ and search for your topic
+1. Go to <https://pmc.ncbi.nlm.nih.gov/> and search for your topic
 2. On the left column, apply filters:
    - Select the 'Open Access' filter under article attributes
    - Optionally, limit the publication date range
@@ -97,27 +110,28 @@ For advanced users who prefer to run each step manually, follow the detailed pip
    - In the 'Format' dropdown, select 'PMCID List'
    - Click the 'Create File' button to download the file
 4. Create a directory called `pmcids` in the project root if it doesn't exist
-5. Move the downloaded file to the `pmcids` directory and rename it if desired (format: `keyword_pmc_result.txt`)
+5. Move the downloaded file to the `pmcids` directory and rename it if desired (format: `{keyword}_pmc_result.txt`)
 
 ### Step 2: Download Articles from PubMed Central
 
 Run the article download script with your PMCID list:
 
 ```bash
-bash fetch_pmc_articles.sh pmcids/your_keyword_pmc_result.txt
+bash fetch_pmc_articles.sh pmcids/{keyword}_pmc_result.txt
 ```
 
-This will download BioC JSON formatted articles to `fulltext_articles/your_keyword_pmc_articles/` directory.
+This will download BioC JSON formatted articles to `fulltext_articles/{keyword}_pmc_articles/` directory.
 
 ### Step 3: Generate FAISS Index
 
 Generate a vector index from the downloaded articles:
 
 ```bash
-python index_generator.py --document_path fulltext_articles/your_keyword_pmc_articles/ --input_type json
+python index_generator.py --document_path fulltext_articles/{keyword}_pmc_articles/ --input_type json
 ```
 
 Optional parameters:
+
 - `--max_files`: Maximum number of files to process (default: 250000)
 - `--group_size`: Number of documents to process per group (default: 1000)
 - `--chunk_size`: Size of text chunks for indexing (default: 1000)
@@ -136,11 +150,13 @@ FAISS_INDEX = "indexes/faiss_index"
 ### Step 5: Start the Chatbot
 
 1. Start the API server:
+
    ```bash
    python app.py
    ```
 
 2. In a separate terminal, start the Streamlit interface:
+
    ```bash
    streamlit run PMC-LaMP.py
    ```
@@ -149,19 +165,10 @@ FAISS_INDEX = "indexes/faiss_index"
 
 ## Advanced Configuration
 
-### Customizing Prompt Templates
-
-The file `prompt_templates.py` contains different templates for various types of queries:
-- `question_answering_prompt`: General question answering
-- `future_research_prompt`: Suggesting future research directions
-- `implications_prompt`: Discussing broader implications
-- `comparative_analysis_prompt`: Comparing research findings
-
-You can modify these templates to customize the chatbot's responses.
-
 ### Changing Models
 
 In `config.py`, you can change the models used:
+
 - `READER_MODEL`: The LLM used for generating responses
 - `EMBEDDING_MODEL`: The model used for text embeddings
 - `RERANKER_MODEL`: The model used for reranking search results
@@ -173,10 +180,6 @@ In `config.py`, you can change the models used:
 - If the chatbot doesn't start, check that both the API server and Streamlit interface are running.
 - For Windows users, ensure you have properly set up WSL or a Linux VM before attempting to run the application.
 
-## License
-
-[Your license information here]
-
 ## Contact
 
-For questions or feedback, please contact: valiant@vanderbilt.edu
+For questions or feedback, please contact: <valiant@vanderbilt.edu>

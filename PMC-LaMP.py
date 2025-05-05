@@ -1,60 +1,12 @@
-# import streamlit as st
-
-
-# st.set_page_config(page_title="PMC_LaMP", page_icon="💡")
-
-# st.write("# Welcome to PMC-LaMP! 👋")
-# st.sidebar.success("Follow the steps above.")
-
-# st.markdown(
-#     """**👈 Follow the steps on the left** to get a custom RAG-Enabled chatbot with a PubMed knowledge base"""
-# )
-
-
 import os
-import sys
 import json
-import time
 import requests
-import subprocess
 import streamlit as st
 from datetime import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
 SERVER_IP = os.getenv("SERVER_IP")
-
-
-def start_uvicorn():
-    """
-    Starts the Uvicorn server as a subprocess and displays a loading bar.
-
-    Attempts to start the server using 'app.py'. If successful, displays a success message.
-    If an error is thrown, it displays the error message.
-    """
-    try:
-        # Start the subprocess in a separate thread
-        subprocess.Popen([f"{sys.executable}", "app.py"])
-
-        # Show the loading bar
-        with st.empty():
-            with st.progress(0):
-                for i in range(100):
-                    time.sleep(1)  # Simulate a short loading process
-                    st.progress(i + 1)
-
-        # Wait for the subprocess to finish
-        result = subprocess.run([f"{sys.executable}", "app.py"], check=True)
-        if result.returncode == 0:
-            st.success("Uvicorn server started successfully!")
-            st.write(
-                "The Uvicorn server is now running. If things aren't working, check the terminal where PMC-LaMP.py was started"
-            )
-    except subprocess.CalledProcessError as e:
-        st.error(f"Error starting Uvicorn server: {str(e)}")
-    except Exception as e:
-        st.error(f"Error starting Uvicorn server: {str(e)}")
-
 
 def check_server_status():
     """
@@ -137,7 +89,15 @@ def main():
     Sets up the Streamlit interface and handles user interactions.
     """
     st.set_page_config(page_title="PMC-LaMP", page_icon="💡")
-    st.title("chatbot demo")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.image("assets/masi-logo.png")
+    with col2:
+        st.image("assets/valiant-logo.png")
+        st.image("assets/vuse-logo.png")
+
+    st.title("PMC-LaMP Chat Demo")
     st.write(
         "Note: This is a basic demo and accepts only standalone queries at this time"
     )
