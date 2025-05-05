@@ -4,10 +4,10 @@ import sys
 import argparse
 import subprocess
 import time
-import requests
 from pathlib import Path
-import shutil
 import webbrowser
+import importlib.util
+
 
 def print_section(title):
     """Print a section header with formatting."""
@@ -30,20 +30,21 @@ def interactive_setup():
         return False
     
     # Check if required packages are installed
-    try:
-        import streamlit
-        import fastapi
-        import uvicorn
-        import langchain
-        print("✓ All core dependencies appear to be installed.")
-    except ImportError as e:
-        print(f"⚠️  Missing dependencies detected: {e}")
+    missing_dependencies = []
+    for package in ["streamlit", "fastapi", "uvicorn", "langchain"]:
+        if importlib.util.find_spec(package) is None:
+            missing_dependencies.append(package)
+    
+    if missing_dependencies:
+        print(f"⚠️  Missing dependencies detected: {', '.join(missing_dependencies)}")
         choice = input("Would you like to install required dependencies? (y/n): ").lower()
         if choice == 'y':
             subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
         else:
             print("Please install dependencies using: pip install -r requirements.txt")
             return False
+    else:
+        print("✓ All core dependencies appear to be installed.")
     
     # Create required directories
     for directory in ["pmcids", "fulltext_articles", "indexes"]:
@@ -65,30 +66,13 @@ def fetch_pmcids_interactive(keyword):
             return pmcid_file
     
     # Instruct user how to manually get PMCIDs
-    print("\nTo get PMCIDs, you have two options:")
-    print("\nOption 1: Manual download (recommended for better control)")
+    print("\nTo get PMCIDs:")
     print("  1. Go to https://pmc.ncbi.nlm.nih.gov/ and search for your topic")
     print("  2. On the left column, select the 'Open Access' filter")
     print("  3. Click 'Send to' (top right) → File → Format: PMCID List → Create File")
     print("  4. Save the file to the 'pmcids' folder as '{keyword}_pmc_result.txt'")
     
-    print("\nOption 2: Let me attempt to fetch some sample PMCIDs for you")
-    choice = input("\nWould you like me to attempt to fetch sample PMCIDs? (y/n): ").lower()
-    
-    if choice == 'y':
-        try:
-            # This is a simplified approximation - actual implementation would be more complex
-            # You would need to implement proper API calls to E-utils
-            sample_pmcids = ["PMC9530432", "PMC8943149", "PMC8132702", "PMC7745122", "PMC7523147"]
-            with open(pmcid_file, 'w') as f:
-                f.write('\n'.join(sample_pmcids))
-            print(f"✓ Sample PMCIDs saved to {pmcid_file}")
-            return pmcid_file
-        except Exception as e:
-            print(f"⚠️  Error fetching sample PMCIDs: {e}")
-    
     # Wait for user to manually download PMCIDs
-    print("\nPlease follow Option 1 to manually download PMCIDs.")
     input("Press Enter once you've saved the PMCID file to continue...")
     
     # Check if file exists
@@ -132,7 +116,7 @@ def download_articles(pmcid_file):
         total_pmcids = 0
     
     print(f"Starting download using PMCIDs from: {pmcid_file}")
-    print("This may take several minutes depending on the number of articles...")
+    print("This may take a while depending on the number of articles...")
     
     # Extract the keyword from the PMCID filename
     keyword = os.path.basename(pmcid_file).split("_")[0]
@@ -253,7 +237,7 @@ def generate_index(articles_dir, max_files=250000, group_size=1000, chunk_size=1
                     group_total = expected_groups
                     group_progress = current_group / group_total * 100 if group_total > 0 else 0
                     print(f"\r[Group {current_group}/{group_total}] Overall progress: {group_progress:.1f}%", end="")
-                except:
+                except Exception:
                     print(f"\r{line.strip()}", end="")
                     
             elif "Processing file" in line:
@@ -266,7 +250,7 @@ def generate_index(articles_dir, max_files=250000, group_size=1000, chunk_size=1
                     # Only update occasionally to avoid too many updates
                     if articles_processed % 10 == 0:
                         print(f"\r[Group {current_group}] Files processed: {articles_processed}/{article_count} ({file_progress:.1f}%)", end="")
-                except:
+                except Exception:
                     pass
             
             # Important milestone messages get their own lines
@@ -416,10 +400,10 @@ def main():
     # Get keyword from user if not provided as argument
     keyword = args.keyword
     if not keyword:
-        keyword = input("Enter a keyword for your medical topic (e.g., 'diabetes', 'cancer'): ")
+        keyword = input("Enter a keyword for your medical topic (e.g., 'crohn's disease', 'diabetes'): ")
         if not keyword:
-            print("No keyword provided. Using 'medical' as default.")
-            keyword = "medical"
+            print("No keyword provided. Using \"crohn's disease\" as default.")
+            keyword = "crohn's disease"
     
     # Step 1: Get PMCIDs file
     pmcid_file = fetch_pmcids_interactive(keyword)
