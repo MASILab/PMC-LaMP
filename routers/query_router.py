@@ -17,7 +17,7 @@ async def query(request: QueryRequest, req: Request):
             llm=model_dependencies.reader_llm,
             knowledge_index=model_dependencies.knowledge_base,
             prompt_template=model_dependencies.rag_prompt_template,
-            reranker=model_dependencies.reranker,
+            # reranker=model_dependencies.reranker,
         )
         return AnswerResponse(
             query=request.query, answer=answer, references=relevant_docs_with_source

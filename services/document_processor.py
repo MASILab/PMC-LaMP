@@ -115,9 +115,9 @@ def process_docs_in_groups(
 
         knowledge_base = [
             LangchainDocument(
-                page_content=doc["text"], metadata={"source": doc["source"]}
+                page_content=text, metadata={"source": source}
             )
-            for doc in ds
+            for text, source in zip(ds["text"], ds["source"])
         ]
 
         logging.info("Splitting text into chunks...")
@@ -137,7 +137,7 @@ def process_docs_in_groups(
             logging.info("Adding to knowledge vectorstore...")
             knowledge_vectorstore.add_documents(docs_processed)
 
-        vectorstore_elapsed_time = format_time(time.time() - start_vectorstore_time)
+        vectorstore_elapsed_time = format_time(int(time.time() - start_vectorstore_time))
         logging.info(
             f"Group {group_index} vectorstore added in {vectorstore_elapsed_time}"
         )

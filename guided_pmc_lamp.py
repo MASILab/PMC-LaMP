@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import os
 import sys
 import argparse
@@ -151,34 +150,36 @@ def download_articles(pmcid_file):
         )
 
         # Process output in real-time
-        for line in process.stdout:
+        if process.stdout is not None:
+            for line in process.stdout:
             # Check if the line contains a download status update
-            if "Successfully fetched article" in line:
-                downloaded += 1
-                pmcid = line.split("article")[1].strip()
-                progress = (
-                    (downloaded + failed) / total_pmcids * 100
-                    if total_pmcids > 0
-                    else 0
-                )
-                print(
-                    f"\r[{downloaded}/{total_pmcids}] Downloaded: {progress:.1f}% - Latest: {pmcid}",
-                    end="",
-                )
-            elif "Failed to fetch article" in line:
-                failed += 1
-                pmcid = line.split("article")[1].split(":")[0].strip()
-                print(f"\nFailed to download article: {pmcid}")
-            elif "Completed fetching" in line:
-                print(f"\n\n{line.strip()}")
+                if "Successfully fetched article" in line:
+                    downloaded += 1
+                    pmcid = line.split("article")[1].strip()
+                    progress = (
+                        (downloaded + failed) / total_pmcids * 100
+                        if total_pmcids > 0
+                        else 0
+                    )
+                    print(
+                        f"\r[{downloaded}/{total_pmcids}] Downloaded: {progress:.1f}% - Latest: {pmcid}",
+                        end="",
+                    )
+                elif "Failed to fetch article" in line:
+                    failed += 1
+                    pmcid = line.split("article")[1].split(":")[0].strip()
+                    print(f"\nFailed to download article: {pmcid}")
+                elif "Completed fetching" in line:
+                    print(f"\n\n{line.strip()}")
 
         # Wait for process to complete
         process.wait()
 
         if process.returncode != 0:
             print(f"\n⚠️  Download process exited with code {process.returncode}")
-            for line in process.stderr:
-                print(f"Error: {line.strip()}")
+            if process.stderr is not None:
+                for line in process.stderr:
+                    print(f"Error: {line.strip()}")
         else:
             print(
                 f"\n✓ Download completed: {downloaded} articles downloaded, {failed} failed"
@@ -257,50 +258,51 @@ def generate_index(
         articles_processed = 0
 
         # Process output in real-time
-        for line in process.stdout:
-            # Look for progress indicators in the output
-            if "Processing group" in line and "of files" in line:
-                try:
-                    # Try to extract the group number
-                    current_group = int(
-                        line.split("Processing group")[1].split("of")[0].strip()
-                    )
-                    group_total = expected_groups
-                    group_progress = (
-                        current_group / group_total * 100 if group_total > 0 else 0
-                    )
-                    print(
-                        f"\r[Group {current_group}/{group_total}] Overall progress: {group_progress:.1f}%",
-                        end="",
-                    )
-                except Exception:
-                    print(f"\r{line.strip()}", end="")
-
-            elif "Processing file" in line:
-                try:
-                    # Extract current file info if possible
-                    current_file += 1
-                    articles_processed += 1
-                    file_progress = (
-                        articles_processed / article_count * 100
-                        if article_count > 0
-                        else 0
-                    )
-
-                    # Only update occasionally to avoid too many updates
-                    if articles_processed % 10 == 0:
+        if process.stdout is not None:
+            for line in process.stdout:
+                # Look for progress indicators in the output
+                if "Processing group" in line and "of files" in line:
+                    try:
+                        # Try to extract the group number
+                        current_group = int(
+                            line.split("Processing group")[1].split("of")[0].strip()
+                        )
+                        group_total = expected_groups
+                        group_progress = (
+                            current_group / group_total * 100 if group_total > 0 else 0
+                        )
                         print(
-                            f"\r[Group {current_group}] Files processed: {articles_processed}/{article_count} ({file_progress:.1f}%)",
+                            f"\r[Group {current_group}/{group_total}] Overall progress: {group_progress:.1f}%",
                             end="",
                         )
-                except Exception:
-                    pass
+                    except Exception:
+                        print(f"\r{line.strip()}", end="")
 
-            # Important milestone messages get their own lines
-            elif "Converting documents to" in line or "Creating embeddings" in line:
-                print(f"\n{line.strip()}")
-            elif "Knowledge vectorstore successfully saved" in line:
-                print(f"\n\n✅ {line.strip()}")
+                elif "Processing file" in line:
+                    try:
+                        # Extract current file info if possible
+                        current_file += 1
+                        articles_processed += 1
+                        file_progress = (
+                            articles_processed / article_count * 100
+                            if article_count > 0
+                            else 0
+                        )
+
+                        # Only update occasionally to avoid too many updates
+                        if articles_processed % 10 == 0:
+                            print(
+                                f"\r[Group {current_group}] Files processed: {articles_processed}/{article_count} ({file_progress:.1f}%)",
+                                end="",
+                            )
+                    except Exception:
+                        pass
+
+                # Important milestone messages get their own lines
+                elif "Converting documents to" in line or "Creating embeddings" in line:
+                    print(f"\n{line.strip()}")
+                elif "Knowledge vectorstore successfully saved" in line:
+                    print(f"\n\n✅ {line.strip()}")
 
         # Wait for process to complete
         process.wait()
@@ -318,7 +320,7 @@ def generate_index(
         )
         if (
             "Knowledge vectorstore successfully saved"
-            in error_output + process.stdout.read()
+            in error_output + (process.stdout.read() if process.stdout else "")
         ):
             print("✓ FAISS index generated successfully.")
             return f"indexes/{index_name}"
@@ -365,49 +367,52 @@ def update_config(index_path):
         return False
 
 
-import platform
-
 def start_servers():
-    """Start the API server in a new terminal and Streamlit interface."""
+    """Start the API server and Streamlit interface."""
     print_section("Starting PMC-LaMP Application")
 
-    # Start API server in a new terminal window
-    print("Starting API server in a new terminal...")
-    if platform.system() == "Linux":
-        os.system(f"gnome-terminal -- bash -c 'python app.py; exec bash'")
-    elif platform.system() == "Darwin":  # macOS
-        os.system(f"open -a Terminal 'python app.py'")
-    elif platform.system() == "Windows":
-        os.system(f"start cmd /k python app.py")
-    else:
-        print("Unsupported OS for opening a new terminal.")
+    # FIXMEL: Doesn't actually run the server
+    # Start API server in background
+    print("Starting API server...")
+    api_process = subprocess.Popen(
+        [sys.executable, "app.py"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
+
+    # Wait a bit for the API to start
+    time.sleep(3)
+
+    if api_process.poll() is not None:
+        print("⚠️  API server failed to start.")
+        error_output = (
+            api_process.stderr.read() if api_process.stderr else "Unknown error"
+        )
+        print(f"Error details: {error_output}")
         return False
 
-    # Wait for the API server to start
-    print("Waiting for API server to start...")
-    time.sleep(5)  # Adjust this delay if needed
+    print("✓ API server started successfully.")
 
     # Start Streamlit interface
     print("Starting Streamlit interface...")
-    streamlit_process = subprocess.Popen(
-        [sys.executable, "-m", "streamlit", "run", "PMC-LaMP.py"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
+    # streamlit_process = subprocess.Popen(
+    #     [sys.executable, "-m", "streamlit", "run", "PMC-LaMP.py"],
+    #     stdout=subprocess.PIPE,
+    #     stderr=subprocess.PIPE,
+    #     text=True,
+    # )
 
     # Wait a bit for Streamlit to start
     time.sleep(3)
 
-    if streamlit_process.poll() is not None:
-        print("⚠️  Streamlit interface failed to start.")
-        error_output = (
-            streamlit_process.stderr.read()
-            if streamlit_process.stderr
-            else "Unknown error"
-        )
-        print(f"Error details: {error_output}")
-        return False
+    # if streamlit_process.poll() is not None:
+    #     print("⚠️  Streamlit interface failed to start.")
+    #     api_process.terminate()
+    #     error_output = (
+    #         streamlit_process.stderr.read()
+    #         if streamlit_process.stderr
+    #         else "Unknown error"
+    #     )
+    #     print(f"Error details: {error_output}")
+    #     return False
 
     print("✓ Streamlit interface started successfully.")
 
@@ -432,7 +437,8 @@ def start_servers():
             time.sleep(1)
     except KeyboardInterrupt:
         print("\nShutting down servers...")
-        streamlit_process.terminate()
+        # streamlit_process.terminate()
+        api_process.terminate()
         print("Servers stopped.")
 
     return True

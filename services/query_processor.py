@@ -2,7 +2,7 @@ import time
 import logging
 from typing import Optional, List, Tuple
 from langchain_community.vectorstores import FAISS
-from transformers import pipeline
+from transformers.pipelines.base import Pipeline
 # Commented out reranker-related code to avoid issues with colbert
 # from ragatouille import RAGPretrainedModel
 from .utils import format_time
@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 def answer_with_rag(
     question: str,
-    llm: pipeline,
+    llm: Pipeline,
     knowledge_index: FAISS,
     prompt_template: str,
     # Commented out reranker-related code to avoid issues with colbert
@@ -29,7 +29,7 @@ def answer_with_rag(
     )
 
     doc_contents = [doc.page_content for doc, _ in docs_with_scores]
-    doc_metadata = [doc.metadata["source"] for doc, _ in docs_with_scores]
+    doc_metadata = [doc.metadata.get("source", "unknown") for doc, _ in docs_with_scores]
     doc_scores = [score for _, score in docs_with_scores]
 
     # Commented out reranker-related code to avoid issues with colbert
@@ -52,7 +52,7 @@ def answer_with_rag(
     # else:
     relevant_docs = [
         (doc_contents[i], doc_metadata[i], doc_scores[i])
-        for i in range(num_docs_final)
+        for i in range(min(num_docs_final, len(doc_contents)))
     ]
 
     context = "\nExtracted documents:\n"
@@ -61,8 +61,12 @@ def answer_with_rag(
 
     final_prompt = prompt_template.format(question=question, context=context)
     log.info("Generating answer...")
-    answer = llm(final_prompt)[0]["generated_text"]
-    answer_elapsed_time = format_time(time.time() - answer_start_time)
+    llm_output = llm(final_prompt)
+    if isinstance(llm_output, list) and len(llm_output) > 0 and isinstance(llm_output[0], dict):
+        answer = llm_output[0].get("generated_text", "No generated text found")
+    else:
+        raise ValueError("Unexpected output format from LLM pipeline")
+    answer_elapsed_time = format_time(int(time.time() - answer_start_time))
     log.info(f"Answer generated in {answer_elapsed_time}")
 
     return answer, relevant_docs

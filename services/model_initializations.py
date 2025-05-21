@@ -3,12 +3,12 @@ import torch
 import logging
 from .utils import format_time
 from collections import namedtuple
+from transformers.utils.quantization_config import BitsAndBytesConfig
 from transformers import (
-    BitsAndBytesConfig,
     AutoTokenizer,
-    AutoModelForCausalLM,
-    pipeline,
+    AutoModelForCausalLM
 )
+from transformers.pipelines import pipeline
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from config import (
@@ -73,7 +73,7 @@ class ModelLoader:
 
             # self.reranker = RERANKER_MODEL
 
-            init_elapsed_time = format_time(time.time() - init_start_time)
+            init_elapsed_time = format_time(int(time.time() - init_start_time))
             log.info(f"Models initialized in {init_elapsed_time}")
 
             return ModelDependencies(

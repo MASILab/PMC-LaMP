@@ -69,6 +69,10 @@ def main():
         EMBEDDING_MODEL,
     )
 
+    if knowledge_vectorstore is None:
+        logging.error("Failed to process documents. 'process_docs_in_groups' returned None.")
+        return
+
     # Save knowledge vectorstore
     logging.info("\nSaving knowledge vectorstore...")
     index_dir = Path("./indexes")
@@ -78,7 +82,7 @@ def main():
     logging.info("Knowledge vectorstore successfully saved.")
 
     # Log total execution time
-    elapsed_time = format_time(time.time() - start_time)
+    elapsed_time = format_time(int(time.time() - start_time))
     logging.info(f"\nTotal time elapsed to run program: {elapsed_time}")
 
 
