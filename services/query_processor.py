@@ -3,7 +3,8 @@ import logging
 from typing import Optional, List, Tuple
 from langchain_community.vectorstores import FAISS
 from transformers import pipeline
-from ragatouille import RAGPretrainedModel
+# Commented out reranker-related code to avoid issues with colbert
+# from ragatouille import RAGPretrainedModel
 from .utils import format_time
 
 log = logging.getLogger(__name__)
@@ -14,7 +15,8 @@ def answer_with_rag(
     llm: pipeline,
     knowledge_index: FAISS,
     prompt_template: str,
-    reranker: Optional[RAGPretrainedModel] = None,
+    # Commented out reranker-related code to avoid issues with colbert
+    # reranker: Optional[RAGPretrainedModel] = None,
     num_retrieved_docs: int = 100,
     num_docs_final: int = 5,
 ) -> Tuple[str, List[Tuple[str, str, float]]]:
@@ -30,27 +32,28 @@ def answer_with_rag(
     doc_metadata = [doc.metadata["source"] for doc, _ in docs_with_scores]
     doc_scores = [score for _, score in docs_with_scores]
 
-    if reranker:
-        log.info("Reranking documents...")
-        reranked_docs = reranker.rerank(question, doc_contents, k=num_docs_final)
-        reranked_contents = [
-            rdoc["content"] if isinstance(rdoc, dict) else rdoc
-            for rdoc in reranked_docs
-        ]
+    # Commented out reranker-related code to avoid issues with colbert
+    # if reranker:
+    #     log.info("Reranking documents...")
+    #     # reranked_docs = reranker.rerank(question, doc_contents, k=num_docs_final)
+    #     # reranked_contents = [
+    #     #     rdoc["content"] if isinstance(rdoc, dict) else rdoc
+    #     #     for rdoc in reranked_docs
+    #     # ]
 
-        relevant_docs = [
-            (
-                content,
-                doc_metadata[doc_contents.index(content)],
-                doc_scores[doc_contents.index(content)],
-            )
-            for content in reranked_contents
-        ]
-    else:
-        relevant_docs = [
-            (doc_contents[i], doc_metadata[i], doc_scores[i])
-            for i in range(num_docs_final)
-        ]
+    #     # relevant_docs = [
+    #     #     (
+    #     #         content,
+    #     #         doc_metadata[doc_contents.index(content)],
+    #     #         doc_scores[doc_contents.index(content)],
+    #     #     )
+    #     #     for content in reranked_contents
+    #     # ]
+    # else:
+    relevant_docs = [
+        (doc_contents[i], doc_metadata[i], doc_scores[i])
+        for i in range(num_docs_final)
+    ]
 
     context = "\nExtracted documents:\n"
     for i, (content, _, _) in enumerate(relevant_docs):

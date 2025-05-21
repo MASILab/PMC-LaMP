@@ -14,7 +14,7 @@ from langchain_community.vectorstores import FAISS
 from config import (
     READER_MODEL,
     EMBEDDING_MODEL,
-    RERANKER_MODEL,
+    # RERANKER_MODEL,
     FAISS_INDEX,
     PROMPT_TEMPLATE,
 )
@@ -71,7 +71,7 @@ class ModelLoader:
                 max_new_tokens=500,
             )
 
-            self.reranker = RERANKER_MODEL
+            # self.reranker = RERANKER_MODEL
 
             init_elapsed_time = format_time(time.time() - init_start_time)
             log.info(f"Models initialized in {init_elapsed_time}")
@@ -81,7 +81,7 @@ class ModelLoader:
                 self.knowledge_base,
                 self.reader_llm,
                 self.rag_prompt_template,
-                self.reranker,
+                # self.reranker,
             )
         except Exception as e:
             log.error(f"Error during models initialization: {e}")
@@ -95,6 +95,6 @@ ModelDependencies = namedtuple(
         "knowledge_base",
         "reader_llm",
         "rag_prompt_template",
-        "reranker",
+        # "reranker",
     ],
 )

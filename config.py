@@ -1,11 +1,15 @@
-from colbert import Trainer as RAGPretrainedModel
+import os
+# from colbert import RAGPretrainedModel
+
+# Set SERVER_IP to the value from the .env file or default to 'localhost'
+SERVER_IP = os.getenv('SERVER_IP', 'localhost')
 
 FAISS_INDEX = "indexes/faiss_index"
 
 
 READER_MODEL = "HuggingFaceH4/zephyr-7b-beta"
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L12-v2"
-RERANKER_MODEL = RAGPretrainedModel.from_pretrained("colbert-ir/colbertv2.0")
+# RERANKER_MODEL = RAGPretrainedModel.from_pretrained("colbert-ir/colbertv2.0")
 PROMPT_TEMPLATE = [
     {
         "role": "system",

@@ -365,28 +365,27 @@ def update_config(index_path):
         return False
 
 
+import platform
+
 def start_servers():
-    """Start the API server and Streamlit interface."""
+    """Start the API server in a new terminal and Streamlit interface."""
     print_section("Starting PMC-LaMP Application")
 
-    # Start API server in background
-    print("Starting API server...")
-    api_process = subprocess.Popen(
-        [sys.executable, "app.py"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-    )
-
-    # Wait a bit for the API to start
-    time.sleep(3)
-
-    if api_process.poll() is not None:
-        print("⚠️  API server failed to start.")
-        error_output = (
-            api_process.stderr.read() if api_process.stderr else "Unknown error"
-        )
-        print(f"Error details: {error_output}")
+    # Start API server in a new terminal window
+    print("Starting API server in a new terminal...")
+    if platform.system() == "Linux":
+        os.system(f"gnome-terminal -- bash -c 'python app.py; exec bash'")
+    elif platform.system() == "Darwin":  # macOS
+        os.system(f"open -a Terminal 'python app.py'")
+    elif platform.system() == "Windows":
+        os.system(f"start cmd /k python app.py")
+    else:
+        print("Unsupported OS for opening a new terminal.")
         return False
 
-    print("✓ API server started successfully.")
+    # Wait for the API server to start
+    print("Waiting for API server to start...")
+    time.sleep(5)  # Adjust this delay if needed
 
     # Start Streamlit interface
     print("Starting Streamlit interface...")
@@ -402,7 +401,6 @@ def start_servers():
 
     if streamlit_process.poll() is not None:
         print("⚠️  Streamlit interface failed to start.")
-        api_process.terminate()
         error_output = (
             streamlit_process.stderr.read()
             if streamlit_process.stderr
@@ -435,7 +433,6 @@ def start_servers():
     except KeyboardInterrupt:
         print("\nShutting down servers...")
         streamlit_process.terminate()
-        api_process.terminate()
         print("Servers stopped.")
 
     return True
